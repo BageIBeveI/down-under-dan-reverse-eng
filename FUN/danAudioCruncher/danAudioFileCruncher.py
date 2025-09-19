@@ -7,7 +7,6 @@
 ### Remember to unzip the difference folder!
 import os
 
-
 if not os.path.isdir("input"):
     os.mkdir("input")
 if not os.path.isdir("output"):
@@ -18,56 +17,67 @@ if not os.path.isdir("difference"):
     
 fileNames = ["1TO3.1", "3TO6.1", "6TO9.1", "9TO12.1", "12TO15.1", "15TO18.1", "18TO21.1"]
 
-for filename in fileNames:
-    try:
 
-        with open(f"input/{filename}", 'rb') as inputAudioFile:
-            audioData = inputAudioFile.read()
+def crunchify(filename):
+    # i dunno why fully rewriting is faster than copying and editing, but i'll take it
 
-            with open(f"difference/{filename.lower()[0:-1]}difference", 'rb') as differenceFile:
-                differences = differenceFile.read()
+    with open(f"input/{filename}", 'rb') as inputAudioFile:
+        audioData = inputAudioFile.read()
 
-                with open(f"output/{filename.lower()}", 'wb') as outputAudioFile:
+        with open(f"difference/{filename.lower()[0:-1]}difference", 'rb') as differenceFile:
+            differences = differenceFile.read()
 
-                    headerSize = 3
-                    adrDiffSize = 2
-                    byteSize = 1
+            with open(f"output/{filename.lower()}", 'wb') as outputAudioFile:
 
-                    nextChangedAddress = 0
+                headerSize = 3
+                adrDiffSize = 2
+                byteSize = 1
 
-                    # first 3 bytes of differences are the whole file length
-                    fileLength = int.from_bytes(differences[0:headerSize], 'little')
+                nextChangedAddress = 0
 
-                    #then in chunks of 2,1 bytes, starting at offset 3, get addressDifference and new value
-                    diffOffset = headerSize
+                # first 3 bytes of differences are the whole file length
+                fileLength = int.from_bytes(differences[0:headerSize], 'little')
 
-                    nextChangedAddress += int.from_bytes(differences[diffOffset:diffOffset + adrDiffSize], 'little')
-                    nextChangedValue = differences[diffOffset + adrDiffSize]
+                #then in chunks of 2,1 bytes, starting at offset 3, get addressDifference and new value
+                diffOffset = headerSize
 
-                    diffOffset += (adrDiffSize + byteSize)
+                nextChangedAddress += int.from_bytes(differences[diffOffset:diffOffset + adrDiffSize], 'little')
+                nextChangedValue = differences[diffOffset + adrDiffSize]
 
-                    for byteIndex in range(fileLength):
+                diffOffset += (adrDiffSize + byteSize)
 
-                        # if we found the right address, write the modified value
-                        if byteIndex == nextChangedAddress:
-                            outputAudioFile.write(nextChangedValue.to_bytes(byteSize, 'little'))
+                for byteIndex in range(fileLength):
 
-                            try:
-                                nextChangedAddress += int.from_bytes(differences[diffOffset:diffOffset + adrDiffSize], 'little')
-                                nextChangedValue = differences[diffOffset + adrDiffSize]
-                            except IndexError:
-                                pass
+                    # if we found the right address, write the modified value
+                    if byteIndex == nextChangedAddress:
+                        outputAudioFile.write(nextChangedValue.to_bytes(byteSize, 'little'))
 
-                            diffOffset += (adrDiffSize + byteSize)
+                        try:
+                            nextChangedAddress += int.from_bytes(differences[diffOffset:diffOffset + adrDiffSize], 'little')
+                            nextChangedValue = differences[diffOffset + adrDiffSize]
+                        except IndexError:
+                            pass
 
-                        # otherwise, write the regular value
-                        else:
-                            outputAudioFile.write(audioData[byteIndex].to_bytes(1, 'little'))
+                        diffOffset += (adrDiffSize + byteSize)
 
-            print(f"{filename} modified successfully.")
+                    # otherwise, write the regular value
+                    else:
+                        outputAudioFile.write(audioData[byteIndex].to_bytes(1, 'little'))
 
-    except FileNotFoundError:
-        print(f"{filename} not found.")
+        print(f"{filename} modified successfully.")
+
+
+for file in fileNames:
+    if os.path.exists(f"input/{file}") and os.path.exists(f"difference/{file[0:-1]}difference"):
+        crunchify(file)
+    else:
+        print(f"{file} or difference file not found.")
+
+
+input("\n\nDone! Any found files are now in the output folder, and can be copied back into where your input came from.\
+        \n(Press enter twice to close console.)")
+
+
 
 
 
