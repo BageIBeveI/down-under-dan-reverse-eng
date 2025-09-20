@@ -24,7 +24,12 @@ def crunchify(filename):
     with open(f"input/{filename}", 'rb') as inputAudioFile:
         audioData = inputAudioFile.read()
 
-        with open(f"difference/{filename.lower()[0:-1]}difference", 'rb') as differenceFile:
+        goodDiffPath = ""
+        if os.path.exists(f"difference/{file[0:-1]}difference"):
+            goodDiffPath = f"difference/{file[0:-1]}difference"
+        elif os.path.exists(f"difference/difference/{file[0:-1]}difference"):
+            goodDiffPath = f"difference/difference/{file[0:-1]}difference"
+        with open(goodDiffPath, 'rb') as differenceFile:
             differences = differenceFile.read()
 
             with open(f"output/{filename.lower()}", 'wb') as outputAudioFile:
@@ -67,12 +72,23 @@ def crunchify(filename):
         print(f"{filename} modified successfully.")
 
 
-for file in fileNames:
-    if os.path.exists(f"input/{file}") and os.path.exists(f"difference/{file[0:-1]}difference"):
-        crunchify(file)
-    else:
-        print(f"{file} or difference file not found.")
+print("Working...")
 
+for file in fileNames:
+    foundFile = False
+    foundDiff = False
+
+    if os.path.exists(f"input/{file}"):
+        foundFile = True
+    if (os.path.exists(f"difference/{file[0:-1]}difference") or os.path.exists(f"difference/difference/{file[0:-1]}difference")):
+        foundDiff = True
+
+    if not foundFile:
+        print(f"input/{file} not found.")
+    if not foundDiff:
+        print(f"difference/{file[0:-1]}difference OR difference/difference/{file[0:-1]}difference not found.")
+    if foundFile and foundDiff:
+        crunchify(file)
 
 input("\n\nDone! Any found files are now in the output folder, and can be copied back into where your input came from.\
         \n(Press enter twice to close console.)")
